@@ -42,7 +42,7 @@ chown 1000:1000 /downloads/movies /downloads/tvshows
 - Settings --> Media Management --> Check mark "Movies deleted from disk are automatically unmonitored in Radarr" under File management section --> Save
 - Settings --> Indexers --> Add --> Newznab # Configure based on your Usenet indexer of choice.
 - Settings --> Download clients --> SABnzbd --> Add Host and port 8080 --> Username and password if added --> Test --> Save 
-**Note: If VPN is enabled, then SABnzbd is reachable on vpn's service name** \ 
+**Note: If VPN is enabled, then SABnzbd is reachable on vpn's service name**\ 
 **Note: Sometimes test will fail if value is left as 'localhost' It may be necessary to input your IP address.**
 - Settings --> General --> Enable advance setting --> Select Authentication and add username and password
 # Add a movie
