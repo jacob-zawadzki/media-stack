@@ -2,19 +2,19 @@
 
 There are two media stacks available.
 
-`stack-1` This stack contains Jellyfin, Radarr, Sonarr, Jackett and Transmission.
+`stack-1` This stack contains Jellyfin, Radarr, Sonarr, and SABnzbd.
 
-`stack-2` This stack contains Jellyfin, Radarr, Sonarr, Prowlarr, qBitTorrent and VPN.
+`stack-2` This stack contains Jellyfin, Radarr, Sonarr, SABnzbd and VPN.
 
 Any one of them can be deployed using --profile option with docker-compose.
 
 ```
 docker network create mynetwork
 
-# Install Jellyfin, Radarr, Sonarr, Jackett and Transmission stack
+# Install Jellyfin, Radarr, Sonarr, and SABnzbd stack
 docker-compose --profile stack-1 up -d
 
-# Or, Install Jellyfin, Radarr, Sonarr, Prowlarr, qBitTorrent and VPN stack
+# Or, Install Jellyfin, Radarr, Sonarr, SABnzbd and VPN stack
 ## By default NordVPN is configured. This can be changed to ExpressVPN, SurfShark, OpenVPN or Wireguard VPN by updating docker-compose.yml file. It uses OpenVPN type for all providers.
 
 VPN_SERVICE_PROVIDER=nordvpn OPENVPN_USER=openvpn-username OPENVPN_PASSWORD=openvpn-password SERVER_REGIONS=Switzerland docker-compose --profile stack-2 up -d
@@ -22,63 +22,38 @@ VPN_SERVICE_PROVIDER=nordvpn OPENVPN_USER=openvpn-username OPENVPN_PASSWORD=open
 docker-compose -f docker-compose-nginx.yml up -d # OPTIONAL to use Nginx as reverse proxy
 ```
 
-# Configure Transmission / qBittorrent
+# Configure SABnzbd
 
-For qBitTorrent, 
-
-- Open qBitTorrent at http://localhost:5080. Default username:password is admin:adminadmin
-- Go to Tools --> Options --> WebUI --> Change password
-
-For qBiTorrent / Transmission
+- Open SABnzbd at http://localhost:8080. 
+- Configure using wizard, inputting your Usenet provider API key when instructed.
 
 - From backend, Run below commands
 
 ```
-# docker exec -it transmission bash # Get inside transmission container, OR
-docker exec -it qbittorrent bash # Get inside qBittorrent container
+# docker exec -it sabnzbd bash # Get inside SABnzbd container.
 
 mkdir /downloads/movies /downloads/tvshows
 chown 1000:1000 /downloads/movies /downloads/tvshows
 ```
 
-# Add indexer to Jackett
-
-- Open Jackett UI at http://localhost:9117
-- Add indexer
-- Search for torrent indexer (e.g. the pirates bay, YTS)
-- Add selected
-
 # Configure Radarr
 
 - Open Radarr at http://localhost:7878
 - Settings --> Media Management --> Check mark "Movies deleted from disk are automatically unmonitored in Radarr" under File management section --> Save
-- Settings --> Indexers --> Add --> Add Rarbg indexer --> Add minimum seeder (4) --> Test --> Save
-- Settings --> Indexers --> Add --> Torznab --> Follow steps from Jackett to add indexer
-- Settings --> Download clients --> Transmission --> Add Host (transmission / qbittorrent) and port (9091 / 5080) --> Username and password if added --> Test --> Save **Note: If VPN is enabled, then transmission / qbittorrent is reachable on vpn's service name**
-- Settings --> General --> Enable advance setting --> Select AUthentication and add username and password
+- Settings --> Indexers --> Add --> Newznab # Configure based on your Usenet indexer of choice.
+- Settings --> Download clients --> SABnzbd --> Add Host and port 8080 --> Username and password if added --> Test --> Save **Note: If VPN is enabled, then SABnzbd is reachable on vpn's service name** **Note: Sometimes tesl will fail if value is left as 'localhost' It may be necessary to input your IP address.
+- Settings --> General --> Enable advance setting --> Select Authentication and add username and password
 
 # Add a movie
 
 - Movies --> Search for a movie --> Add Root folder (/downloads) --> Quality profile --> Add movie
-- Go to transmission (http://localhost:9091) and see if movie is getting downloaded.
+- Go to SABnzbd (http://localhost:8080) and see if movie is getting downloaded.
 
 # Configure Jellyfin
 
 - Open Jellyfin at http://localhost:8096
 - Configure as it asks for first time.
-- Add media library folder and choose /data/movies/
-
-# Configure Jackett
-
-- Add admin password
-
-# Configure Prowlarr
-
-- Open Prowlarr at http://localhost:9696
-- Settings --> General --> Authentications --> Select AUthentication and add username and password
-- Add Indexers, Indexers --> Add Indexer --> Search for indexer --> Choose base URL --> Test and Save
-- Add application, Settings --> Apps --> Add application --> Choose Sonarr or Radarr or any apps to link --> Prowlarr server (http://localhost:9696) --> Radarr server (http://localhost:7878) --> API Key --> Test and Save
-- This will add indexers in respective apps automatically.
+- Add media library folder and choose /downloads/movies. Repeat and choose folder /downloads/tvshows. Name libraries accordingly.
 
 # Apply SSL in Nginx
 
@@ -135,99 +110,9 @@ location /radarr {
   }
 ```
 
-# Prowlarr Nginx reverse proxy
-
-- Settings --> General --> URL Base --> Add base (/prowlarr)
-- Add below proxy in nginx configuration
-
-This may need to change configurations in indexers and base in URL.
-
-```
-location /prowlarr {
-    proxy_pass http://prowlarr:9696;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $http_connection;
-  }
-```
 
 - Restart containers.
 
-# Jackett Nginx reverse proxy
-
-- Get inside jackett container and go to `/config/Jackett/`
-- Add `"BasePathOverride": "/jackett"` in ServerConfig.json file.
-- Add below proxy
-
-```
-location /jackett/ {
-    proxy_pass         http://jackett:9117;
-    proxy_http_version 1.1;
-    proxy_set_header   Upgrade $http_upgrade;
-    proxy_set_header   Connection keep-alive;
-    proxy_cache_bypass $http_upgrade;
-    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header   X-Forwarded-Proto $scheme;
-    proxy_set_header   X-Forwarded-Host $http_host;
-}
-```
-
-- Restart containers
-
-# Transmission Nginx reverse proxy
-
-- Add below proxy in Nginx config
-
-```
-location ^~ /transmission {
-      
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header Host $http_host;
-          proxy_set_header X-NginX-Proxy true;
-          proxy_http_version 1.1;
-          proxy_set_header Connection "";
-          proxy_pass_header X-Transmission-Session-Id;
-          add_header   Front-End-Https   on;
-      
-          location /transmission/rpc {
-              proxy_pass http://transmission:9091;
-          }
-      
-          location /transmission/web/ {
-              proxy_pass http://transmission:9091;
-          }
-      
-          location /transmission/upload {
-              proxy_pass http://transmission:9091;
-          }
-          
-          location /transmission {
-              return 301 https://$host/transmission/web;
-          }
-}
-```
-
-**Note: If VPN is enabled, then transmission is reachable on vpn's service name**
-
-# qBittorrent Nginx proxy
-
-```
-location /qbt/ {
-    proxy_pass         http://qbittorrent:5080/;
-    proxy_http_version 1.1;
-
-    proxy_set_header   Host               http://qbittorrent:5080;
-    proxy_set_header   X-Forwarded-Host   $http_host;
-    proxy_set_header   X-Forwarded-For    $remote_addr;
-    proxy_cookie_path  /                  "/; Secure";
-}
-```
-
-**Note: If VPN is enabled, then qbittorrent is reachable on vpn's service name**
 
 # Jellyfin Nginx proxy
 
