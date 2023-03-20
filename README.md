@@ -43,9 +43,8 @@ chown 1000:1000 /downloads/movies /downloads/tvshows
 - Settings --> Indexers --> Add --> Newznab # Configure based on your Usenet indexer of choice.
 - Settings --> Download clients --> SABnzbd --> Add Host and port 8080 --> Username and password if added --> Test --> Save 
 **Note: If VPN is enabled, then SABnzbd is reachable on vpn's service name** 
-**Note: Sometimes tesl will fail if value is left as 'localhost' It may be necessary to input your IP address.
-- Settings --> General --> Enable advance setting --> Select Authentication and add username and password**
-
+**Note: Sometimes tesl will fail if value is left as 'localhost' It may be necessary to input your IP address.**
+- Settings --> General --> Enable advance setting --> Select Authentication and add username and password
 # Add a movie
 
 - Movies --> Search for a movie --> Add Root folder (/downloads) --> Quality profile --> Add movie
