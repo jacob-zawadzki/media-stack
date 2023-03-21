@@ -96,7 +96,25 @@ services:
     ports:
       - 8989:8989
     restart: unless-stopped
-  
+   
+  bazarr:
+    profiles: ["base", "bazarr", "stack-1", "stack-2"]
+    container_name: bazarr
+    image: linuxserver/bazarr:latest
+    networks:
+      - mynetwork
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    ports:
+      - 6767:6767
+    volumes:
+      - radarr-config:/config
+      - usenet-downloads:/downloads
+    restart: "unless-stopped"
+
+ 
   jellyfin:
     profiles: ["base", "jelly", "stack-1", "stack-2"]
     image: linuxserver/jellyfin:10.8.9
